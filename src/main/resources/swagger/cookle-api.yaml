@@ -1,0 +1,131 @@
+openapi: 3.0.3
+info:
+  title: Cookle API
+  description: API לחיפוש מתכונים לפי מרכיבים
+  version: 1.0.0
+servers:
+  - url: 'http://localhost:8080/project'
+
+
+tags:
+  - name: recipes
+    description: ניהול מתכונים
+  - name: ingredients
+    description: ניהול מרכיבים
+
+paths:
+  /api/recipes:
+    get:
+      tags:
+        - recipes
+      summary: קבלת כל המתכונים
+      description: מחזיר רשימה של כל המתכונים במערכת
+      operationId: getAllRecipes
+      responses:
+        '200':
+          description: הבקשה הושלמה בהצלחה
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Recipe'
+    
+  /api/recipes/{id}:
+    get:
+      tags:
+        - recipes
+      summary: קבלת מתכון לפי מזהה
+      description: מחזיר מתכון ספציפי לפי מזהה
+      operationId: getRecipeById
+      parameters:
+        - name: id
+          in: path
+          description: מזהה המתכון
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: המתכון נמצא בהצלחה
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recipe'
+        '404':
+          description: המתכון לא נמצא
+
+components:
+  schemas:
+    Recipe:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: מזהה המתכון
+        name:
+          type: string
+          description: שם המתכון
+        yield:
+          type: integer
+          description: כמות המנות הצפויה במתכון
+        ingredients:
+          type: array
+          description: רשימת המרכיבים במתכון
+          items:
+            $ref: '#/components/schemas/RecipeIngredient'
+        instructions:
+          type: array
+          description: רשימת הוראות ההכנה
+          items:
+            $ref: '#/components/schemas/Instruction'
+
+    Ingredient:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: מזהה המרכיב
+        name:
+          type: string
+          description: שם המרכיב
+
+    RecipeIngredient:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        recipe:
+          $ref: '#/components/schemas/RecipeRef'
+        ingredient:
+          $ref: '#/components/schemas/Ingredient'
+        amount:
+          type: integer
+          description: כמות המרכיב הדרושה למתכון
+
+    RecipeRef:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: מזהה המתכון
+
+    Instruction:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        recipe:
+          $ref: '#/components/schemas/RecipeRef'
+        description:
+          type: string
+          description: תיאור ההוראה
+        stepOrder:
+          type: integer
+          description: סדר ההוראה

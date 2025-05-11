@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookle - חיפוש מתכונים</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="search-container">
+        <div class="logo">
+            <span>C</span><span>o</span><span>o</span><span>k</span><span>l</span><span>e</span>
+        </div>
+        
+        <form id="search-form">
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="חפש מתכון לפי שם...">
+                <button type="submit">חפש</button>
+            </div>
+        </form>
+        
+        <div id="loading" class="loading">טוען מתכונים...</div>
+        <div id="error-message" class="error-message"></div>
+    </div>
+    
+    <div id="results-container" class="results-container"></div>
+    
+    <div id="single-recipe-container" class="single-recipe-container">
+        <div id="back-button" class="back-button">← חזרה לתוצאות</div>
+        <div id="recipe-title" class="recipe-title-large"></div>
+        <div class="recipe-details">
+            <div class="recipe-section">
+                <h3>מרכיבים:</h3>
+                <div id="recipe-ingredients" class="recipe-ingredients-detailed"></div>
+            </div>
+            <div class="recipe-section">
+                <h3>הוראות הכנה:</h3>
+                <div id="recipe-instructions" class="recipe-instructions"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/recipe-search.js"></script>
+</body>
+</html> 
