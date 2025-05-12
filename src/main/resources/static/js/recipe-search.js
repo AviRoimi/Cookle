@@ -14,6 +14,64 @@ document.addEventListener('DOMContentLoaded', function() {
     const recipeTitle = document.getElementById('recipe-title');
     const recipeIngredients = document.getElementById('recipe-ingredients');
     const recipeInstructions = document.getElementById('recipe-instructions');
+    const searchContainer = document.querySelector('.search-container');
+    
+    // Set initial state with search in center
+    searchContainer.classList.add('initial-state');
+    
+    // Hide the single recipe container on page load
+    singleRecipeContainer.style.display = 'none';
+    
+    // Function to update container margins based on search container height
+    function updateContainerMargins() {
+        const searchHeight = searchContainer.offsetHeight;
+        const topMargin = searchHeight + 20; // Add some extra space
+        
+        // Apply to both results and single recipe containers
+        document.documentElement.style.setProperty('--container-top-margin', topMargin + 'px');
+        
+        // Update inline margins if containers are visible
+        if (resultsContainer.style.display === 'flex') {
+            resultsContainer.style.marginTop = topMargin + 'px';
+        }
+        
+        if (singleRecipeContainer.style.display === 'block') {
+            singleRecipeContainer.style.marginTop = topMargin + 'px';
+        }
+    }
+    
+    // Update margins when window is resized
+    window.addEventListener('resize', updateContainerMargins);
+    
+    // Initial update of margins
+    setTimeout(updateContainerMargins, 100);
+    
+    // Helper function to set container class and ensure proper display
+    function setContainerClass(container, className, displayStyle) {
+        // First remove all possible classes
+        if (container === resultsContainer) {
+            container.classList.remove('results-container-empty', 'results-container-with-results', 'results-container-many-results');
+            
+            // If setting to empty, make sure it's completely hidden
+            if (className === 'results-container-empty') {
+                container.style.display = 'none';
+                container.style.visibility = 'hidden';
+                return;
+            }
+        } else if (container === singleRecipeContainer) {
+            container.classList.remove('single-recipe-container-compact', 'single-recipe-container-expanded');
+        }
+        
+        // Add the new class
+        container.classList.add(className);
+        
+        // Set display style
+        container.style.display = displayStyle;
+        container.style.visibility = 'visible';
+        
+        // Update container margins after display style changes
+        updateContainerMargins();
+    }
     
     let currentRecipes = []; // Store current search results
 
@@ -30,11 +88,19 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        // Move search bar to top if it's in initial state
+        searchContainer.classList.remove('initial-state');
+        
+        // Reset container class to empty state
+        setContainerClass(resultsContainer, 'results-container-empty', 'none');
+        setContainerClass(singleRecipeContainer, 'single-recipe-container-compact', 'none');
+        errorMessage.style.display = 'none';
+
         // Show loading indicator and hide other elements
         loadingIndicator.style.display = 'block';
-        resultsContainer.style.display = 'none';
-        singleRecipeContainer.style.display = 'none';
-        errorMessage.style.display = 'none';
+        
+        // Update margins after layout changes
+        setTimeout(updateContainerMargins, 100);
 
         // Make API call to search recipes by name
         fetch(`/ControllerServlet/recipes/name/${encodeURIComponent(searchTerm)}`)
@@ -69,8 +135,15 @@ document.addEventListener('DOMContentLoaded', function() {
      * Handle back button click to return to search results
      */
     backButton.addEventListener('click', function() {
-        singleRecipeContainer.style.display = 'none';
-        resultsContainer.style.display = 'block';
+        // Hide single recipe view and show results
+        setContainerClass(singleRecipeContainer, 'single-recipe-container-compact', 'none');
+        
+        // Show results with the appropriate class
+        if (currentRecipes.length > 10) {
+            setContainerClass(resultsContainer, 'results-container-many-results', 'flex');
+        } else {
+            setContainerClass(resultsContainer, 'results-container-with-results', 'flex');
+        }
     });
 
     /**
@@ -79,6 +152,14 @@ document.addEventListener('DOMContentLoaded', function() {
      * @param {Array} recipes - Array of recipe objects with recipe and ingredients properties
      */
     function displayResults(recipes) {
+        // Check if recipes array is empty or undefined
+        if (!recipes || recipes.length === 0) {
+            setContainerClass(resultsContainer, 'results-container-empty', 'none');
+            resultsContainer.style.display = 'none';
+            resultsContainer.style.visibility = 'hidden';
+            return;
+        }
+        
         // Clear previous results
         resultsContainer.innerHTML = '';
         
@@ -110,8 +191,15 @@ document.addEventListener('DOMContentLoaded', function() {
             resultsContainer.appendChild(recipeElement);
         });
         
-        // Show results container
-        resultsContainer.style.display = 'block';
+        // Apply the appropriate class based on number of results
+        if (recipes.length > 10) {
+            setContainerClass(resultsContainer, 'results-container-many-results', 'flex');
+        } else {
+            setContainerClass(resultsContainer, 'results-container-with-results', 'flex');
+        }
+        
+        // Scroll to the top of results
+        resultsContainer.scrollTop = 0;
     }
 
     /**
@@ -121,7 +209,10 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function showSingleRecipe(index) {
         const recipe = currentRecipes[index];
-        if (!recipe) return;
+        if (!recipe) {
+            setContainerClass(singleRecipeContainer, 'single-recipe-container-compact', 'none');
+            return;
+        }
 
         // Set recipe title and ingredients
         recipeTitle.textContent = recipe.recipe;
@@ -145,17 +236,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data && data.length > 0) {
                     // Display instructions
                     recipeInstructions.textContent = data[0].instructions || 'No instructions available.';
+                    
+                    // Check instruction length and apply appropriate class
+                    if (data[0].instructions && data[0].instructions.length > 500) {
+                        setContainerClass(singleRecipeContainer, 'single-recipe-container-expanded', 'block');
+                    } else {
+                        setContainerClass(singleRecipeContainer, 'single-recipe-container-compact', 'block');
+                    }
                 } else {
                     recipeInstructions.textContent = 'No instructions available for this recipe.';
+                    setContainerClass(singleRecipeContainer, 'single-recipe-container-compact', 'block');
                 }
             })
             .catch(error => {
                 recipeInstructions.textContent = 'Could not load instructions. Please try again later.';
                 console.error('Error fetching instructions:', error);
+                setContainerClass(singleRecipeContainer, 'single-recipe-container-compact', 'block');
             });
         
         // Hide results and show single recipe
-        resultsContainer.style.display = 'none';
-        singleRecipeContainer.style.display = 'block';
+        setContainerClass(resultsContainer, 'results-container-empty', 'none');
+        setContainerClass(singleRecipeContainer, 'single-recipe-container-compact', 'block');
+        
+        // Scroll to the top of the recipe
+        singleRecipeContainer.scrollTop = 0;
     }
 }); 
